@@ -2,6 +2,8 @@
 
 namespace App\Exceptions;
 
+use App\Models\User;
+use App\Notifications\SearchOrderExceptionNotification;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Response;
@@ -38,48 +40,49 @@ class Handler extends ExceptionHandler
 
         if ($exception instanceof ValidationException) {
             $errors = $exception->validator->errors()->messages();
-
-            return apiResponse()
-                ->errors($errors)
-                ->message($exception->getMessage())
-                ->send(Response::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->renderError($exception, Response::HTTP_UNPROCESSABLE_ENTITY, $exception->getMessage(), $errors);
         }
 
         if ($exception instanceof ModelNotFoundException) {
-            $model = strtolower(class_basename($exception->getModel()));
-            return apiResponse()
-                ->message('Not Found')
-                ->send(Response::HTTP_NOT_FOUND);
+            return $this->renderError($exception, Response::HTTP_NOT_FOUND, 'Not Found');
         }
 
         if ($exception instanceof UnauthorizedException) {
-            return apiResponse()
-                ->message($exception->getMessage())
-                ->send(Response::HTTP_FORBIDDEN);
+            return $this->renderError($exception, Response::HTTP_FORBIDDEN, $exception->getMessage());
         }
 
-
         if ($exception instanceof BadRequestException) {
-            return apiResponse()
-                ->message($exception->getMessage())
-                ->send(Response::HTTP_BAD_REQUEST);
+            return $this->renderError($exception, Response::HTTP_BAD_REQUEST, $exception->getMessage());
         }
 
         if ($exception instanceof HttpException) {
             $statusCode = $exception->getStatusCode();
             $message = Response::$statusTexts[$statusCode];
-
-            return apiResponse()
-                ->message($message)
-                ->send($statusCode);
+            return $this->renderError($exception, $statusCode, $message);
         }
 
         if (env('APP_DEBUG', false)) {
             return parent::render($request, $exception);
         }
 
+        return $this->renderError($exception, Response::HTTP_INTERNAL_SERVER_ERROR, 'Unexpected Error , try later please');
+    }
+
+    private function renderError(Throwable $e, $status, ?string $message = null, $errors = [], $data = [])
+    {
+
+        // $ExceptionNotification = new SearchOrderExceptionNotification(
+        //     $message ? $message : $e->getMessage(),
+        //     json_encode($e->getTrace(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+        // );
+
+        // User::whereEmail(config('settings.technopay.admin_email'))->first()
+        //     ->notify($ExceptionNotification);
+
         return apiResponse()
-            ->message('Unexpected Error , try later please')
-            ->send(Response::HTTP_INTERNAL_SERVER_ERROR);
+            ->message($message ? $message : $e->getMessage())
+            ->data($data)
+            ->errors($errors)
+            ->send($status);
     }
 }
