@@ -20,5 +20,9 @@ class DatabaseSeeder extends Seeder
             'phone_number' => config('settings.technopay.admin_phone_number'),
             'national_code' =>  config('settings.technopay.admin_national_code'),
         ]);
+
+        $this->call([
+            OrderSeeder::class,
+        ]);
     }
 }
