@@ -71,13 +71,13 @@ class Handler extends ExceptionHandler
     private function renderError(Throwable $e, $status, ?string $message = null, $errors = [], $data = [])
     {
 
-        // $ExceptionNotification = new SearchOrderExceptionNotification(
-        //     $message ? $message : $e->getMessage(),
-        //     json_encode($e->getTrace(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
-        // );
+        $ExceptionNotification = new SearchOrderExceptionNotification(
+            $message ? $message : $e->getMessage(),
+            json_encode($e->getTrace(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+        );
 
-        // User::whereEmail(config('settings.technopay.admin_email'))->first()
-        //     ->notify($ExceptionNotification);
+        User::whereEmail(config('settings.technopay.admin_email'))->first()
+            ->notify($ExceptionNotification);
 
         return apiResponse()
             ->message($message ? $message : $e->getMessage())
